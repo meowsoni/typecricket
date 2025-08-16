@@ -18,36 +18,32 @@
     </header>
     
     <div class="typing-container">
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value" id="scoreline">0/0 0.0 overs</div>
-                <div class="stat-label">Score</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value" id="wpm">0</div>
-                <div class="stat-label">WPM</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value" id="rr">0.00</div>
-                <div class="stat-label">Run Rate</div>
-            </div>
-        </div>
-        
-        <div class="text-display" id="textDisplay"></div>
-        
-        <div class="controls">
-            <button class="btn" onclick="startNew()">New Test</button>
-            <button class="btn" onclick="reset()">Reset</button>
-        </div>
-        
-        <div class="instructions">
-            Every word is 1 run. Every second is 1 ball. Errors accumulate, wickets fall.
-        </div>
+        <div class="content-row">
+            <div class="left-pane">
+                <div class="instructions">
+                    Every word is 1 run. Every second is 1 ball. Errors accumulate, wickets fall.
+                </div>
 
-        <div id="cricketScoreboard" class="scoreboard"></div>
+                <div class="text-display" id="textDisplay"></div>
+                
+                <div id="wormChart" class="worm-chart"></div>
+                
+                <div class="controls">
+                    <button class="btn" id="startInningsBtn" onclick="onStartInnings()">Start Innings</button>
+                    <button class="btn" id="declareBtn" onclick="onDeclare()" style="display:none">Declare</button>
+                </div>
+            </div>
+            <div class="right-pane">
+                <div id="scoreSummaryRight" class="score-summary-right"></div>
+                <div id="cricketScoreboard" class="scoreboard"></div>
+            </div>
+        </div>
     </div>
 
+    <!-- Removed Edit Lineup modal in favor of inline editing on scoreboard -->
+
     <script src="cricket.js"></script>
+    <script src="stats.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -2,9 +2,9 @@
 // Exposes a CricketEngine class used by script.js
 
 (function(global){
-    const PLAYERS = [
-        'Tendulkar', 'Ponting', 'Lara', 'Dravid', 'Sangakkara',
-        'Kallis', 'Jadeja', 'Akhtar', 'Warne', 'Muralitharan'
+    const DEFAULT_PLAYERS = [
+        'Tendulkar', 'Sehwag', 'Ganguly', 'Dravid', 'Kaif',
+        'Yuvraj', 'Pathan', 'Khan', 'Kumble', 'Harbhajan', 'Srisanth'
     ];
 
     const DISMISSAL_MODES = [
@@ -15,13 +15,17 @@
     function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     class CricketEngine {
-        constructor({ onUpdate } = {}) {
+        constructor({ onUpdate, customPlayers } = {}) {
             this.onUpdate = onUpdate || (() => {});
-            this.reset();
+            this.customPlayers = Array.isArray(customPlayers) && customPlayers.length ? customPlayers : null;
+            this.reset(this.customPlayers);
         }
 
-        reset() {
-            this.players = PLAYERS.map(name => ({
+        reset(customPlayers) {
+            const provided = Array.isArray(customPlayers) ? customPlayers.filter(Boolean) : [];
+            const merged = provided.length ? provided.concat(DEFAULT_PLAYERS) : DEFAULT_PLAYERS;
+            const basePlayers = merged.slice(0, 11); // allow XI
+            this.players = basePlayers.map(name => ({
                 name,
                 runs: 0,
                 balls: 0,
