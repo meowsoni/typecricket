@@ -264,6 +264,11 @@ header {
     font-weight: 700;
 }
 
+/* Highlight current partnership rows */
+.scoreboard tr.current-partnership td {
+    background: #f0fdf4;
+}
+
 /* removed score-summary block, score shown inline in stats */
 
 /* Responsiveness: stack on small screens */

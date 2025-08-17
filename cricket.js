@@ -40,6 +40,9 @@
             this.strikerIndex = 0; // 0 or 1 within currentBatters
             this.pairErrorCount = 0; // errors accumulated for current partnership
             this.pairStartTimestampMs = Date.now(); // start time for current partnership
+            this.pairErrorTimestamps = []; // rolling record of partnership error times
+            this.suppressImmediateForNextPartnership = false; // skip <=18s instant rule for next 1–2 wicket if prior fell via window
+            this.pendingWicketReason = ''; // 'immediate' | 'window' | ''
             this.updateCallback();
         }
 
@@ -74,25 +77,56 @@
                 const outIdxInPair = Math.random() < 0.5 ? 0 : 1;
                 const playerIndex = currentBatterOrder[outIdxInPair];
                 this.dismissPlayer(playerIndex);
+                // Configure suppression for next partnership based on reason
+                if (this.pendingWicketReason === 'window') {
+                    this.suppressImmediateForNextPartnership = true;
+                } else {
+                    this.suppressImmediateForNextPartnership = false;
+                }
+                this.pendingWicketReason = '';
             } else {
                 // Accumulate errors against the partnership
                 this.pairErrorCount += 1;
+                this.pairErrorTimestamps.push(Date.now());
             }
             this.updateCallback();
         }
 
         shouldWicketFall() {
-            // Pair-based error logic with time windows
             const nextPosition = this.wickets + 1; // 1-10
-            const elapsedPairSec = (Date.now() - this.pairStartTimestampMs) / 1000;
-            const errorsIncludingThis = this.pairErrorCount + 1; // include current error
+            const now = Date.now();
+            const elapsedPairSec = (now - this.pairStartTimestampMs) / 1000;
 
             if (nextPosition <= 2) {
-                if (elapsedPairSec <= 18) return true; // instant fall
-                if (elapsedPairSec <= 36) return errorsIncludingThis >= 3; // 3 errors within 36s
-                // After 36s, keep it challenging: every 3rd error
-                return (errorsIncludingThis % 3) === 0;
+                // If prior wicket fell via window, suppress immediate rule for first 18s of the new partnership
+                if (elapsedPairSec <= 18) {
+                    if (!this.suppressImmediateForNextPartnership) {
+                        this.pendingWicketReason = 'immediate';
+                        return true;
+                    }
+                    // If suppressed, allow check to move to rolling window
+                } else if (this.suppressImmediateForNextPartnership) {
+                    // Once beyond 18s, clear suppression
+                    this.suppressImmediateForNextPartnership = false;
+                }
+                // >18s: rolling 36-second window — 3 partnership errors within any 36s span
+                const timestamps = this.pairErrorTimestamps.slice();
+                // include current error for evaluation
+                timestamps.push(now);
+                const cutoff = now - 36000;
+                const recent = timestamps.filter(ts => ts >= cutoff).sort((a, b) => a - b);
+                if (recent.length >= 3) {
+                    for (let i = 0; i <= recent.length - 3; i++) {
+                        if (recent[i + 2] - recent[i] <= 36000) {
+                            this.pendingWicketReason = 'window';
+                            return true;
+                        }
+                    }
+                }
+                return false;
             }
+
+            const errorsIncludingThis = this.pairErrorCount + 1; // include current error
 
             if (nextPosition >= 3 && nextPosition <= 6) {
                 return (errorsIncludingThis % 5) === 0;
@@ -124,6 +158,7 @@
                 // Reset partnership error tracking
                 this.pairErrorCount = 0;
                 this.pairStartTimestampMs = Date.now();
+                this.pairErrorTimestamps = [];
             }
         }
 
@@ -149,24 +184,32 @@
         }
 
         buildScoreboardHTML() {
+            function formatDismissalForDisplay(text) {
+                if (!text) return '';
+                let d = String(text).trim();
+                d = d.replace(/ b /g, ' b.');
+                if (!d.endsWith('.')) d += '.';
+                return d;
+            }
+
             const battingRows = this.players.map((p, idx) => {
                 const isBatting = this.currentBatters.includes(idx) && !p.out;
-                const strikerStar = isBatting && (this.striker === idx) ? ' *' : '';
-                const status = p.out ? p.dismissal : (isBatting ? 'batting' : 'did not bat');
-                return `<tr><td>${p.name}${strikerStar}</td><td>${p.runs}</td><td>${p.balls}</td><td>${status}</td></tr>`;
+                const isStriker = isBatting && (this.striker === idx);
+                const namePart = p.out
+                    ? `${p.name} ${formatDismissalForDisplay(p.dismissal)}`
+                    : `${p.name}${isStriker ? '*' : ''}`;
+                const statsPart = `${p.runs}(${p.balls})`;
+                const rowClass = isBatting ? ' class="current-partnership"' : '';
+                return `<tr${rowClass}><td>${namePart}</td><td style="text-align:right">${statsPart}</td></tr>`;
             }).join('');
 
             const totalOvers = `${this.overs}.${this.balls}`;
+            const totalRow = `<tr><td><strong>Total</strong></td><td style="text-align:right"><strong>${this.totalRuns}/${this.wickets} ${totalOvers} overs</strong></td></tr>`;
+
             return `
-                <h3>Scorecard</h3>
                 <table>
-                    <thead>
-                        <tr><th>Batter</th><th>R</th><th>B</th><th>How Out</th></tr>
-                    </thead>
                     <tbody>${battingRows}</tbody>
-                    <tfoot>
-                        <tr><td>Total</td><td>${this.totalRuns}</td><td colspan="2">${this.wickets} wickets, ${totalOvers} overs</td></tr>
-                    </tfoot>
+                    <tfoot>${totalRow}</tfoot>
                 </table>
             `;
         }
