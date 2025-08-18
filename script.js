@@ -22,6 +22,45 @@ let savedLineup = ['Tendulkar','Sehwag','Ganguly','Dravid','Kaif','Yuvraj','Path
 selectedFlag = '🇮🇳';
 let wormChart = null;
 
+// External article loading
+let preselectedText = '';
+
+function normalizeToWordCount(input, desiredCount) {
+    const words = (input || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(Boolean);
+    if (words.length === desiredCount) return words.join(' ');
+    if (words.length > desiredCount) return words.slice(0, desiredCount).join(' ');
+    // If shorter, repeat the content with a separator until we hit the desired count
+    const base = words.slice();
+    let i = 0;
+    while (words.length < desiredCount && base.length > 0) {
+        // insert a soft separator every ~120 words to feel article-like
+        if (words.length % 120 === 0) words.push('\u2014');
+        words.push(base[i % base.length]);
+        i++;
+    }
+    return words.slice(0, desiredCount).join(' ');
+}
+
+async function loadArticlesAndPickOne() {
+    try {
+        const res = await fetch('texts.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load texts.json');
+        const data = await res.json();
+        const articles = Array.isArray(data) ? data : Array.isArray(data?.articles) ? data.articles : [];
+        const onlyStrings = articles.filter(a => typeof a === 'string');
+        if (onlyStrings.length === 0) throw new Error('No valid articles');
+        const idx = Math.floor(Math.random() * onlyStrings.length);
+        preselectedText = normalizeToWordCount(onlyStrings[idx], 1000);
+    } catch (e) {
+        // fallback handled by init()
+        preselectedText = '';
+    }
+}
+
 function buildThousandWordText(targetWordCount = 1000) {
     const wordPools = sampleTexts.map(t => t.split(/\s+/));
     const flatPool = [].concat(...wordPools);
@@ -35,7 +74,7 @@ function buildThousandWordText(targetWordCount = 1000) {
 }
 
 function init(customPlayers) {
-    text = buildThousandWordText(1000);
+    text = preselectedText && preselectedText.length ? preselectedText : buildThousandWordText(1000);
     currentIndex = 0;
     startTime = null;
     wrongChar = null;
@@ -167,14 +206,17 @@ document.body.setAttribute('tabindex', '0');
 
 // initial render and engine init with default lineup
 window.addEventListener('DOMContentLoaded', () => {
-    init(savedLineup);
-    renderScoreSummaryRight();
-    render();
-    updateStats();
-    const startBtn = document.getElementById('startInningsBtn');
-    if (startBtn) startBtn.disabled = false;
-    const flagEl = document.getElementById('teamFlag');
-    if (flagEl) flagEl.textContent = selectedFlag;
+    // Try to load long-form articles, then init
+    loadArticlesAndPickOne().finally(() => {
+        init(savedLineup);
+        renderScoreSummaryRight();
+        render();
+        updateStats();
+        const startBtn = document.getElementById('startInningsBtn');
+        if (startBtn) startBtn.disabled = false;
+        const flagEl = document.getElementById('teamFlag');
+        if (flagEl) flagEl.textContent = selectedFlag;
+    });
 });
 
 function onEngineUpdate(snapshot) {

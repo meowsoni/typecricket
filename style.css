@@ -8,7 +8,7 @@
 
 body {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    background: linear-gradient(135deg, #fceff9 0%, #e7f0ff 50%, #eaf8e1 100%);
+    background: linear-gradient(180deg, #e6f6ff 0%, #e6f6ff 35%, #e9fbea 35%, #e9fbea 100%);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -26,6 +26,19 @@ body {
     height: 100%;
     z-index: -1;
     opacity: 0.1;
+}
+
+.cricket-field::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(34, 197, 94, 0.15) 0px,
+        rgba(34, 197, 94, 0.15) 80px,
+        rgba(16, 185, 129, 0.15) 80px,
+        rgba(16, 185, 129, 0.15) 160px
+    );
 }
 
 .wickets {
@@ -110,15 +123,15 @@ header {
 
 .text-display {
     font-family: inherit;
-    font-size: 1.2rem;
-    line-height: 2rem;
+    font-size: 1.5rem;
+    line-height: 2.4rem;
     color: #4b5563;
     margin-bottom: 1rem;
     padding: 1.25rem 1.25rem 1.5rem;
-    background: #fbfcff;
+    background: #f7fff7;
     border-radius: 12px;
     border: 2px dotted #dbeafe;
-    height: calc(2rem * 5 + 1.25rem);
+    height: calc(2.4rem * 5 + 1.25rem);
     overflow-y: scroll;
     overflow-x: hidden;
     position: relative;
@@ -160,7 +173,7 @@ header {
 
 .char.correct {
     color: #1e7a31;
-    background: #ddf7e3;
+    background: #d9fbe5;
     border-radius: 3px;
 }
 
@@ -171,10 +184,10 @@ header {
 }
 
 .char.current {
-    background: #d9fbe5;
+    background: #e7f3ff;
     color: #111827;
     border-radius: 3px;
-    outline: 2px solid #86efac;
+    outline: 2px solid #93c5fd;
     outline-offset: 2px;
     animation: blink 1s infinite;
 }
@@ -185,9 +198,9 @@ header {
 }
 
 .btn {
-    background: #9ae6b4;
-    color: #0f5132;
-    border: 2px solid #74d39a;
+    background: #86efac;
+    color: #064e3b;
+    border: 2px solid #34d399;
     padding: 10px 18px;
     border-radius: 999px;
     font-size: 0.95rem;
@@ -197,7 +210,7 @@ header {
 }
 
 .btn:hover {
-    background: #86e1a7;
+    background: #6ee7b7;
 }
 
 .btn:active {
@@ -237,8 +250,8 @@ header {
 /* Scoreboard */
 .scoreboard {
     margin-top: 0;
-    background: #fffdf7;
-    border: 2px dashed #fde68a;
+    background: #fbfff5;
+    border: 2px dashed #d9f99d;
     border-radius: 12px;
     padding: 1rem;
     font-size: 0.95rem;
